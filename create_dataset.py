@@ -3,6 +3,7 @@ import random
 from PIL import Image, ImageDraw
 from tqdm import tqdm
 from odutil import analysis
+import argparse
 
 
 def iou(box_1, box_2):
@@ -153,33 +154,57 @@ def draw_box(img_dir, label_dir, output_dir):
     print('drawing done.')
 
 
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--img_dir', type=str, required=True,
+                        help='Original images dir.')
+    parser.add_argument('--obj_dir', type=str, required=True,
+                        help='Object images dir.')
+    parser.add_argument('--output_dir', type=str, required=True,
+                        help='Target images output dir.')
+    parser.add_argument('--label_dir', type=str, required=True,
+                        help='Target labels output dir.')
+    parser.add_argument('--N', type=int, required=True,
+                        help='Amount of target images.')
+    parser.add_argument('--obj_num_max', type=int, required=True,
+                        help='Amount of objects in an image at most.')
+    parser.add_argument('--obj_size_min', type=float, required=True,
+                        help='Min scale of an object')
+    parser.add_argument('--obj_size_max', type=float, required=True,
+                        help='Max scale of an object')
+    parser.add_argument('--occluded_rate', type=float, required=True,
+                        help='Objects occluded at most.')
+    parser.add_argument('--output_bbox_dir', type=str, required=True,
+                        help='Target images with bbox output dir.')
+    parser.add_argument('--train_path', type=str, required=True,
+                        help='Train subset txt output path.')
+    parser.add_argument('--val_path', type=str, required=True,
+                        help='Val subset txt output path.')
+    parser.add_argument('--train_ratio', type=float, required=True,
+                        help='Training set ratio.')
+
+    args = parser.parse_args()
+    return args
+
+
 def main():
-    img_dir = '/data_nas/yckj3341/dataset/VOC/VOC2007/JPEGImages'
-    obj_dir = 'original_objects'
-    output_dir = 'JPEGImages'
-    output_box_dir = 'JPEGImages_bbox'
-    label_dir = 'labels'
-    N = 50
-    obj_num_max = 4
-    obj_size_min = 0.1
-    obj_size_max = 0.5
-    occluded_rate = 0.1
-    create_dataset(img_dir,
-                   obj_dir,
-                   output_dir,
-                   label_dir,
-                   N,
-                   obj_num_max,
-                   obj_size_min,
-                   obj_size_max,
-                   occluded_rate)
+    args = get_parser()
+    create_dataset(args.img_dir,
+                   args.obj_dir,
+                   args.output_dir,
+                   args.label_dir,
+                   args.N,
+                   args.obj_num_max,
+                   args.obj_size_min,
+                   args.obj_size_max,
+                   args.occluded_rate)
 
-    draw_box(output_dir, label_dir, output_box_dir)
+    draw_box(args.output_dir, args.label_dir, args.output_bbox_dir)
 
-    analysis.split_trainval(output_dir,
-                            os.path.join('ImageSet', 'train.txt'),
-                            os.path.join('ImageSet', 'val.txt'),
-                            0.8)
+    analysis.split_trainval(args.output_dir,
+                            args.train_path,
+                            args.val_path,
+                            args.train_ratio)
     print('split done.')
 
 
