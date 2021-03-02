@@ -33,9 +33,9 @@ def train(backbone, pretrained, img_dir, label_dir, subset_path, input_size, gri
     epochs = 15
 
     dataset = trainvalDataset(
-        img_dir, label_dir, subset_path, int(input_size), int(grid_num), pretrained)
+        img_dir, label_dir, subset_path, input_size, grid_num, pretrained)
     train_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=int(batch_size), shuffle=True, num_workers=8)
+        dataset, batch_size=batch_size, shuffle=True, num_workers=8)
 
     yolov0 = YOLOV0(backbone, pretrained)
     yolov0.train()
@@ -76,19 +76,25 @@ def train(backbone, pretrained, img_dir, label_dir, subset_path, input_size, gri
         print("*"*30)
 
 
-def main():
+def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--backbone', type=str)
-    parser.add_argument('--pretrained', type=str)
-    parser.add_argument('--img_dir', type=str)
-    parser.add_argument('--label_dir', type=str)
-    parser.add_argument('--subset_path', type=str)
-    parser.add_argument('--input_size', type=str)
-    parser.add_argument('--grid_num', type=str)
-    parser.add_argument('--batch_size', type=str)
-    parser.add_argument('--loss_dir', type=str)
+    parser.add_argument('--backbone', type=str, required=True)
+    parser.add_argument('--pretrained', type=str, required=True)
+    parser.add_argument('--img_dir', type=str, required=True)
+    parser.add_argument('--label_dir', type=str, required=True)
+    parser.add_argument('--subset_path', type=str, required=True)
+    parser.add_argument('--input_size', type=int, required=True)
+    parser.add_argument('--grid_num', type=int, required=True)
+    parser.add_argument('--batch_size', type=int, required=True)
+    parser.add_argument('--loss_dir', type=str, required=True)
 
+    return parser
+
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
+
     train(args.backbone,
           args.pretrained,
           args.img_dir,

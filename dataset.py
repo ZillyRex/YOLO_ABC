@@ -39,22 +39,26 @@ class trainvalDataset(torch.utils.data.Dataset):
             img = torch.tensor(img, dtype=torch.float32)
 
         label_path = os.path.join(self.labels_dir, self.label_files[idx])
+        boxes = []
         with open(label_path) as f:
-            line = f.readlines()
-            _, cx, cy, w, h = list(map(float, line[0].strip().split()))
+            for line in f:
+                _, cx, cy, w, h = list(map(float, line.strip().split()))
+                boxes.append((cx, cy, w, h))
 
         target = torch.zeros(self.grid_num, self.grid_num,
                              5, dtype=torch.float32)
         grid_size = self.input_size//self.grid_num
-        cell_x = int(((cx)*self.input_size)//grid_size)
-        cell_y = int(((cy)*self.input_size)//grid_size)
-        obj_vector = target[cell_x][cell_y]
+        for box in boxes:
+            cx, cy, w, h = box
+            cell_x = int(((cx)*self.input_size)//grid_size)
+            cell_y = int(((cy)*self.input_size)//grid_size)
+            obj_vector = target[cell_x][cell_y]
 
-        obj_vector[0] = 1.
-        obj_vector[1] = (((cx)*self.input_size) % grid_size)/grid_size
-        obj_vector[2] = (((cy)*self.input_size) % grid_size)/grid_size
-        obj_vector[3] = w
-        obj_vector[4] = h
+            obj_vector[0] = 1.
+            obj_vector[1] = (((cx)*self.input_size) % grid_size)/grid_size
+            obj_vector[2] = (((cy)*self.input_size) % grid_size)/grid_size
+            obj_vector[3] = w
+            obj_vector[4] = h
 
         return img, target
 
@@ -64,19 +68,24 @@ class trainvalDataset(torch.utils.data.Dataset):
         print(f'labels dir: {self.labels_dir}')
         print(f'label files: {self.label_files[:4]}')
         print(f'files count: {len(self.img_files)}')
-        print(f'image shape: {self.input_size}*{self.input_size}')
-        print(f'target shape: {self.grid_num}*{self.grid_num}*{5}')
+        print(f'image shape: {self.input_size} * {self.input_size}')
+        print(f'target shape: {self.grid_num} * {self.grid_num} * {5}')
 
 
 def main():
-    img_size = 256
+    imgs_dir = '/data_nas/yckj3341/dataset/hlw/JPEGImages'
+    labels_dir = '/data_nas/yckj3341/dataset/hlw/labels'
+    subset_path = '/data_nas/yckj3341/dataset/hlw/ImageSet/train.txt'
+    img_size = 512
     grid_num = 8
-    dataset = trainvalDataset('JPEGImages', 'labels',
-                              'dataset/train.txt', img_size, grid_num, False)
+    pretrained = False
+    dataset = trainvalDataset(imgs_dir,
+                              labels_dir,
+                              subset_path,
+                              img_size,
+                              grid_num,
+                              pretrained)
     dataset.show_info()
-    img, target = dataset.__getitem__(0)
-    print(img.size())
-    print(target.size())
     train_loader = torch.utils.data.DataLoader(
         dataset, batch_size=1, shuffle=True, num_workers=1)
     for iteration, (input_tensor, target_tensor) in enumerate(train_loader):
@@ -93,13 +102,13 @@ def main():
                 for row in range(grid_num):
                     vec = target_tensor[batch_i][col][row]
                     if vec[0] > 0:
-                        c, cx_, cy_, w_, h_ = vec
+                        _, cx_, cy_, w_, h_ = vec
                         cx = (col+cx_)*grid_size
                         cy = (row+cy_)*grid_size
                         w = w_*img_size
                         h = h_*img_size
                         draw.rectangle([int(cx-w/2), int(cy-h/2), int(cx+w/2), int(cy+h/2)],
-                                       outline=(255, 0, 0), width=3)
+                                       outline=(0, 255, 0), width=2)
 
         img.save('dataset_test.jpg')
         break

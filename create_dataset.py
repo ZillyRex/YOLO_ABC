@@ -183,12 +183,12 @@ def get_parser():
     parser.add_argument('--train_ratio', type=float, required=True,
                         help='Training set ratio.')
 
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 def main():
-    args = get_parser()
+    parser = get_parser()
+    args = parser.parse_args()
     create_dataset(args.img_dir,
                    args.obj_dir,
                    args.output_dir,
